@@ -100,7 +100,7 @@ void printCacheStatus(Cache* cache){
 #endif
 void printCacheStatus2(Cache* cache, std::chrono::milliseconds duration){
     printf("L%d: %s\t\t\t\t\t\tHit Rate: %f\n",  
-        cache->getLevel(), cache->getPolicy().c_str(), cache->getHitRate());
+        cache->getLevel()+1, cache->getPolicy().c_str(), cache->getHitRate());
     printf("Accesses: %lld\t\tHits: %lld\t\tMisses: %lld\n",
         cache->getHits()+cache->getMisses(), cache->getHits(), cache->getMisses());
     printf("Duration: %lld ms\n", duration.count());
