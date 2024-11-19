@@ -48,7 +48,8 @@ else
     elif [ $(file --mime-type -b $TRACE) != "application/gzip" ]; then
         echo "Please provide a trace in gzip format"
     else
-        make -C ${BASEDIR} G++FLAGS="$ARGS"
-        gzip -dc $TRACE | ${BASEDIR}/cache.exe $CONFIG
-    fi 
+        make clean
+        make G++FLAGS="$ARGS"
+        gzip -dc $TRACE | ${BASEDIR}/cacheSim $CONFIG
+    fi
 fi

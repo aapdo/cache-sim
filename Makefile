@@ -14,7 +14,7 @@ CXXFLAGS := -std=c++11 -Wall -Wextra -O2
 all: $(OUTPUT)
 
 $(OUTPUT): $(SRC_FILES) $(POLICY_FILES)
-	$(CXX) $(CXXFLAGS) $(SRC_FILES) $(POLICY_FILES) -o $(OUTPUT)
+	$(CXX) $(CXXFLAGS) $(SRC_FILES) $(POLICY_FILES) $(G++FLAGS) -o $(OUTPUT)
 
 # clean 타겟
 clean:
