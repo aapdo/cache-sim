@@ -14,15 +14,31 @@
 #define hitsOffset 30
 #define missesOffset 55
 
-ll getNextAddress(){
-    char instruction[20], accessType, address[20];
-    scanf("%s %c %s", instruction, &accessType, address);
-    if(strcpy(instruction, "#eof") == 0) //return address 0 if end of line
-        return 0;
-    if(accessType == 's')
-        incReads();
-    else
-        incWrites();
+ll getNextAddress() {
+    char accessType; // 'l' 또는 's' 저장
+    char address[20]; // 메모리 주소 저장
+
+    // 입력 읽기
+    int result = scanf(" %c %s", &accessType, address);
+    if (result == EOF) {
+        // 파일 끝에 도달한 경우
+        return -1;
+    }
+    if (result != 2) {
+        // 입력 형식이 잘못된 경우
+        throw std::invalid_argument("Invalid input format in trace file.");
+    }
+
+    // 명령어 타입 처리
+    if (accessType == 'l') {
+        incReads(); // 읽기 명령 증가
+    } else if (accessType == 's') {
+        incWrites(); // 쓰기 명령 증가
+    } else {
+        throw std::invalid_argument("Invalid access type: " + std::string(1, accessType));
+    }
+
+    // 주소 변환 및 반환
     return hexToDec(address);
 }
 
