@@ -19,7 +19,7 @@ ll getNextAddress(){
     scanf("%s %c %s", instruction, &accessType, address);
     if(strcpy(instruction, "#eof") == 0) //return address 0 if end of line
         return 0;
-    if(accessType == 'R')
+    if(accessType == 's')
         incReads();
     else
         incWrites();
