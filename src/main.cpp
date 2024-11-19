@@ -120,7 +120,7 @@ int main(int argc, char *argv[]){
     }
 
     auto stop = high_resolution_clock::now();
-    auto duration = duration_cast<seconds>(stop-start);
+    auto duration = duration_cast<std::chrono::milliseconds>(stop-start);
 
     #if INTERACTIVE
     usleep(2000000);  
@@ -129,7 +129,7 @@ int main(int argc, char *argv[]){
 
     printTraceInfo2();
     for(int levelItr=0; levelItr<levels; levelItr++){
-        printCacheStatus2(cache[levelItr]);
+        printCacheStatus2(cache[levelItr], duration);
         // will be implemented in cache.cpp
         delete cache[levelItr];
     }
