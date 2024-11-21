@@ -11,6 +11,7 @@
 #include "../policies/nru.h"
 #include "../policies/lfu.h"
 #include "../policies/fifo.h"
+#include "../policies/UpgradedLRU.h"
 // #include "../policies/policy.h"
 
 using namespace std;
@@ -67,8 +68,8 @@ int main(int argc, char *argv[]){
 
     // 각 캐시 레벨의 설정을 반복적으로 읽음
     int iterator = 0;
+    string policy; // 교체 정책 이름 (예: "LRU", "LFU")
     while (iterator < levels) {
-        string policy; // 교체 정책 이름 (예: "LRU", "LFU")
         params >> policy;
 
         // 캐시 크기(cs), 블록 크기(bs), 연관도(sa)를 읽어옴
@@ -98,8 +99,10 @@ int main(int argc, char *argv[]){
     // 메모리 접근을 시뮬레이션
     while (true) {
         // 다음 메모리 주소를 읽어옴 (주소가 -1이면 EOF)
-        ll address = getNextAddress();
-        if (address == -1) break;
+        Access access = getNextAddress();
+        char accesType = access.accessType;
+        ll address = access.address;
+        if (accesType == -1) break;
 
         // 모든 캐시 레벨을 순회하며 데이터 찾기 시도
         for (int levelItr = 0; levelItr < levels; levelItr++) {
@@ -110,15 +113,33 @@ int main(int argc, char *argv[]){
                 cache[levelItr]->incMisses(); // 미스 카운트 증가
                 ll blockToReplace = cache[levelItr]->getBlockToReplace(address); // 교체할 블록 선택
                 cache[levelItr]->insert(address, blockToReplace); // 새로운 블록 삽입
-                cache[levelItr]->update(blockToReplace, 0); // 교체 정책 업데이트 (0 = 미스)
+                
+                // UpgradedLRU인지 확인 후 Access 타입으로 insert 호출
+                if (policy == "UpgradedLRU") {
+                    static_cast<UpgradedLRU*>(cache[levelItr])->insert(access, blockToReplace);
+                } else {
+                    cache[levelItr]->insert(address, blockToReplace);
+                }
 
+                // Access를 활용한 update 호출
+                if (policy == "UpgradedLRU") {
+                    static_cast<UpgradedLRU*>(cache[levelItr])->update(access, blockToReplace);
+                } else {
+                    cache[levelItr]->update(blockToReplace, 0);
+                }
                 #if INTERACTIVE
                 printTraceInfo(); // 현재 접근 정보 출력
                 printCacheStatus(cache[levelItr]); // 현재 캐시 상태 출력
                 #endif
             } else { // 캐시 히트 발생
                 cache[levelItr]->incHits(); // 히트 카운트 증가
-                cache[levelItr]->update(block, 1); // 교체 정책 업데이트 (1 = 히트)
+                // Access를 활용한 update 호출
+                if (policy == "UpgradedLRU") {
+                    static_cast<UpgradedLRU*>(cache[levelItr])->update(access, block);
+                } else {
+                    cache[levelItr]->update(block, 1);
+                }
+
 
                 #if INTERACTIVE
                 printTraceInfo(); // 현재 접근 정보 출력

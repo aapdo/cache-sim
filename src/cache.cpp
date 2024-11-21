@@ -137,16 +137,12 @@ ll Cache::getBlockPosition(ll address){
 
 void Cache::insert(ll address, ll blockToReplace){
     #ifdef DEBUG
-    // 디버그 모드에서 삽입 위치가 올바른지 검증
     if(getIndex(address) != blockToReplace/setAssociativity){
         printf("ERROR: Invalid insertion: Address %x placed in block %lld", address, blockToReplace);
     }
     #endif
-
-    // 주어진 주소의 태그 값을 계산하여 해당 위치(blockToReplace)에 삽입
     cacheBlocks[blockToReplace] = getTag(address);
 }
-
 
 ll Cache::getHits(){
     return hits;

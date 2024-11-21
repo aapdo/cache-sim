@@ -14,7 +14,7 @@
 #define hitsOffset 30
 #define missesOffset 55
 
-ll getNextAddress() {
+Access getNextAddress() {
     char accessType; // 'l' 또는 's' 저장
     char address[20]; // 메모리 주소 저장
 
@@ -22,7 +22,7 @@ ll getNextAddress() {
     int result = scanf(" %c %s", &accessType, address);
     if (result == EOF) {
         // 파일 끝에 도달한 경우
-        return -1;
+        return {-1, 0};
     }
     if (result != 2) {
         // 입력 형식이 잘못된 경우
@@ -37,9 +37,9 @@ ll getNextAddress() {
     } else {
         throw std::invalid_argument("Invalid access type: " + std::string(1, accessType));
     }
-
+ 
     // 주소 변환 및 반환
-    return hexToDec(address);
+    return {accessType, hexToDec(address)};
 }
 
 #ifdef INTERACTIVE

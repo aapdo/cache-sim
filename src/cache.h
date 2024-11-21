@@ -6,6 +6,11 @@
 #include <string.h>
 #define ll long long
 
+struct Access {
+    char accessType; // 'l' 또는 's'를 저장 (읽기/쓰기 명령어 타입)
+    ll address;      // 메모리 주소
+};
+
 // classes defined
 class Cache;
 

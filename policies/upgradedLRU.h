@@ -10,8 +10,10 @@ public:
 
     ll getBlockToReplace(ll address) override; // 교체할 블록 결정
     void update(ll block, int status) override; // LRU 상태 업데이트
+    void update(Access access, ll block); // Access 기반 LRU 갱신 오버로딩
     ll getBlockPosition(ll address) override; // 블록 위치 확인 (캐시 히트 검사)
     void insert(ll address, ll blockToReplace) override; // 블록 삽입
+    void insert(Access access, ll blockToReplace); // 블록 삽입
     void flushWriteBuffer(); // Write Buffer 플러시
     ~UpgradedLRU();
 

@@ -54,6 +54,26 @@ void UpgradedLRU::insert(ll address, ll blockToReplace) {
     update(blockToReplace, 0); // LRU 업데이트
 }
 
+void UpgradedLRU::insert(Access access, ll blockToReplace) {
+    ll tag = getTag(access.address);
+    ll sector = (access.address % blockSize) / sectorSize;
+
+    cache[blockToReplace].sectors[sector].valid = true;
+
+    // 명령어 타입에 따라 처리
+    if (access.accessType == 's') { // 쓰기 명령어
+        cache[blockToReplace].sectors[sector].dirty = true;
+        cache[blockToReplace].sectors[sector].data[0] = tag;
+        // Write Buffer에 추가
+        writeBuffer.emplace(access.address, cache[blockToReplace].sectors[sector].data);
+    } else { // 읽기 명령어
+        cache[blockToReplace].sectors[sector].dirty = false; // 읽기는 더티 아님
+        cache[blockToReplace].sectors[sector].data[0] = tag;
+    }
+
+    update(blockToReplace, 0); // LRU 업데이트
+}
+
 void UpgradedLRU::update(ll block, int status) {
     ll baseIndex = block * numSectors;
     for (size_t sector = 0; sector < numSectors; sector++) {
@@ -61,6 +81,26 @@ void UpgradedLRU::update(ll block, int status) {
             lastUsed[baseIndex + sector] = time; // LRU 갱신
         }
     }
+    time++;
+}
+
+void UpgradedLRU::update(Access access, ll block) {
+    ll baseIndex = block * numSectors;
+
+    if (access.accessType == 's') { // 쓰기 명령어
+        for (size_t sector = 0; sector < numSectors; sector++) {
+            if (cache[block].sectors[sector].valid) {
+                lastUsed[baseIndex + sector] = time; // 쓰기 명령도 LRU 갱신
+            }
+        }
+    } else { // 읽기 명령어
+        for (size_t sector = 0; sector < numSectors; sector++) {
+            if (cache[block].sectors[sector].valid) {
+                lastUsed[baseIndex + sector] = time; // 읽기 명령으로 LRU 갱신
+            }
+        }
+    }
+
     time++;
 }
 
