@@ -67,26 +67,33 @@ std::string Cache::getPolicy(){
 
 Cache::Cache(ll cacheSize, ll blockSize, ll setAssociativity, int level, std::string policy){
     
+    // 주어진 캐시 구성(cacheSize, blockSize, setAssociativity)이 유효한지 확인
     if(!isValidConfig(cacheSize, blockSize, setAssociativity)){
         printf("Invalid Cache configuration\n");
     }
 
+    // 입력된 캐시 속성들을 객체 변수에 저장
     this->cacheSize = cacheSize;
     this->blockSize = blockSize;
     this->setAssociativity = setAssociativity;
     this->level = level;
     this->policy = policy;
 
+    // 캐시 블록 메모리를 동적 할당 (총 캐시 크기 / 블록 크기만큼 공간 할당)
     cacheBlocks = (ll*)malloc(cacheSize/blockSize * sizeof(ll));
-    if(cacheBlocks == NULL){
+    if(cacheBlocks == NULL){ // 메모리 할당 실패 처리
         printf("Failed to allocate memory for L%d cache\n", this->level);
         exit(0);
     }
 
+    // 세트의 개수를 계산: 캐시 크기 / (블록 크기 * 연관도)
     numberOfSets = cacheSize/(blockSize*setAssociativity);
-    offsetSize = log2(blockSize);
-    indexSize = log2(numberOfSets);
 
+    // 블록 크기를 기반으로 오프셋 크기 계산 (log2(blockSize))
+    offsetSize = log2(blockSize);
+
+    // 세트 개수를 기반으로 인덱스 크기 계산 (log2(numberOfSets))
+    indexSize = log2(numberOfSets);
 }
 
 void Cache::incHits(){
@@ -110,25 +117,36 @@ ll Cache::getIndex(ll address){
 }
 
 ll Cache::getBlockPosition(ll address){
+    // 주어진 주소로부터 인덱스 값을 계산
     ll index = getIndex(address);
+
+    // 주어진 주소로부터 태그 값을 계산
     ll tag = getTag(address);
+
+    // 지정된 세트 내에서 태그가 일치하는 블록을 찾음
     ll iterator;
     for(iterator=index*setAssociativity; iterator<(index+1)*setAssociativity; iterator++){
-        if(tag == cacheBlocks[iterator]){
+        if(tag == cacheBlocks[iterator]){ // 태그가 일치하면 해당 위치 반환
             return iterator;
         }
     }
+    // 세트 내에서 태그가 일치하는 블록을 찾지 못하면 -1 반환 (캐시 미스)
     return -1;
 }
 
+
 void Cache::insert(ll address, ll blockToReplace){
     #ifdef DEBUG
+    // 디버그 모드에서 삽입 위치가 올바른지 검증
     if(getIndex(address) != blockToReplace/setAssociativity){
         printf("ERROR: Invalid insertion: Address %x placed in block %lld", address, blockToReplace);
     }
     #endif
+
+    // 주어진 주소의 태그 값을 계산하여 해당 위치(blockToReplace)에 삽입
     cacheBlocks[blockToReplace] = getTag(address);
 }
+
 
 ll Cache::getHits(){
     return hits;
