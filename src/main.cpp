@@ -121,25 +121,15 @@ int main(int argc, char *argv[]){
                     cache[levelItr]->insert(address, blockToReplace);
                 }
 
-                // Access를 활용한 update 호출
-                if (policy == "UpgradedLRU") {
-                    static_cast<UpgradedLRU*>(cache[levelItr])->update(access, blockToReplace);
-                } else {
-                    cache[levelItr]->update(blockToReplace, 0);
-                }
+                cache[levelItr]->update(blockToReplace, 0); // 교체 정책 업데이트 (0 = 미스)
+
                 #if INTERACTIVE
                 printTraceInfo(); // 현재 접근 정보 출력
                 printCacheStatus(cache[levelItr]); // 현재 캐시 상태 출력
                 #endif
             } else { // 캐시 히트 발생
                 cache[levelItr]->incHits(); // 히트 카운트 증가
-                // Access를 활용한 update 호출
-                if (policy == "UpgradedLRU") {
-                    static_cast<UpgradedLRU*>(cache[levelItr])->update(access, block);
-                } else {
-                    cache[levelItr]->update(block, 1);
-                }
-
+                cache[levelItr]->update(block, 1); // 교체 정책 업데이트 (1 = 히트)
 
                 #if INTERACTIVE
                 printTraceInfo(); // 현재 접근 정보 출력
