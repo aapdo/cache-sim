@@ -46,6 +46,10 @@ Cache* createCacheInstance(string& policy, ll cs, ll bs, ll sa, int level){
         Cache* cache = new FIFO(cs, bs, sa, level);
         return cache;
     }
+    else if(policy == "UpgradedLRU"){
+        Cache* cache = new UpgradedLRU(cs, bs, sa, level, 16);
+        return cache;
+    }
     // else if(policy == "<policy>"){
     //     Cache* cache = new <POLICY>(cs, bs, sa, level);
     //     return cache;
@@ -102,6 +106,7 @@ int main(int argc, char *argv[]){
         Access access = getNextAddress();
         char accesType = access.accessType;
         ll address = access.address;
+        // eof
         if (accesType == -1) break;
 
         // 모든 캐시 레벨을 순회하며 데이터 찾기 시도

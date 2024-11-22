@@ -57,8 +57,7 @@ void UpgradedLRU::insert(ll address, ll blockToReplace) {
 // write allocate 정책을 사용함.
 // write 명령어를 수행해야 하는데 miss가 발생하는 경우 allocate 후 write 함. 
 // 이 때 write buffer를 사용하기 때문에 바로 메모리에 쓰지 않고 write buffer에 저장.
-
-// read / write일 때 write buffer에 있는 데이터를 사용해야 하는 경우 다시 불러오도록 만들어야함.
+// read / write일 때 write buffer에 있는 데이터를 사용해야 하는 경우 다시 불러오도록 만들었음.
 void UpgradedLRU::insert(Access access, ll blockToReplace) {
     ll tag = getTag(access.address);
     // address % blockSzie = block offset
@@ -70,7 +69,7 @@ void UpgradedLRU::insert(Access access, ll blockToReplace) {
         cache[blockToReplace].sectors[sector].dirty) {
         
         // 더티 데이터를 Write Buffer에 추가
-        writeBuffer.emplace(access.address, cache[blockToReplace].sectors[sector].data);
+        writeBuffer.insert({access.address, cache[blockToReplace].sectors[sector].data});
         #ifdef DEBUG
         std::cout << "Evicted dirty sector from block " << blockToReplace 
                       << " and added to Write Buffer.\n";
@@ -81,16 +80,20 @@ void UpgradedLRU::insert(Access access, ll blockToReplace) {
     }
 
     cache[blockToReplace].sectors[sector].valid = true;
-
-    // 명령어 타입에 따라 처리
-    if (access.accessType == 's') { // 쓰기 명령어
-        cache[blockToReplace].sectors[sector].dirty = true;
-        cache[blockToReplace].sectors[sector].data[0] = tag;
-        // Write Buffer에 추가
-        writeBuffer.emplace(access.address, cache[blockToReplace].sectors[sector].data);
-    } else { // 읽기 명령어
-        cache[blockToReplace].sectors[sector].dirty = false; // 읽기는 더티 아님
-        cache[blockToReplace].sectors[sector].data[0] = tag;
+    // 교체해서 새로 insert할 블럭이 write buffer에 있는 경우
+    if(writeBuffer.find(access.address) != writeBuffer.end()){
+        // 메모리에 엑세스 하지 않고 write buffer에서 데이터를 가져옴. 
+    } else{
+        // 명령어 타입에 따라 처리
+        if (access.accessType == 's') { // 쓰기 명령어
+            cache[blockToReplace].sectors[sector].dirty = true;
+            cache[blockToReplace].sectors[sector].data[0] = tag;
+            // Write Buffer에 추가
+            writeBuffer.insert({access.address, cache[blockToReplace].sectors[sector].data});
+        } else { // 읽기 명령어
+            cache[blockToReplace].sectors[sector].dirty = false; // 읽기는 더티 아님
+            cache[blockToReplace].sectors[sector].data[0] = tag;
+        }
     }
 
     update(blockToReplace, 0); // LRU 업데이트
@@ -107,14 +110,11 @@ void UpgradedLRU::update(ll block, int status) {
 }
 
 void UpgradedLRU::flushWriteBuffer() {
-    while (!writeBuffer.empty()) {
-        auto [address, data] = writeBuffer.front();
-        writeBuffer.pop();
-        // 메모리에 데이터를 기록하는 시뮬레이션
-        #if DEBUG
-        std::cout << "Flushed address: " << address << " with data size: " << data.size() << "\n";
-        #endif
-    }
+    // write buffer에 저장된 것들을 모두 메모리에 저장함. 이 때 저장된 수에 따라? 주소에 따라? 메모리 접근 횟수를 추가시켜야함.
+    writeBuffer.clear();
+    #if DEBUG
+    std::cout << "Flushed address: " << address << " with data size: " << data.size() << "\n";
+    #endif
 }
 
 void UpgradedLRU::evict(ll block) {
