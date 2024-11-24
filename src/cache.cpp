@@ -2,7 +2,7 @@
 
 #define ll long long
 
-ll readCounter=0, writeCounter=0;
+ll readCounter=0, writeCounter=0, memAccs = 0;
 
 // helper functions
 
@@ -51,12 +51,20 @@ void incWrites(){
     writeCounter++;
 }
 
+void incMemAccs(){
+    memAccs++;
+}
+
 ll getReads(){
     return readCounter;
 }
 
 ll getWrites(){
     return writeCounter;
+}
+
+ll getMemAccs(){
+    return memAccs;
 }
 
 std::string Cache::getPolicy(){
@@ -141,6 +149,7 @@ void Cache::insert(ll address, ll blockToReplace){
         printf("ERROR: Invalid insertion: Address %x placed in block %lld", address, blockToReplace);
     }
     #endif
+    incMemAccs();
     cacheBlocks[blockToReplace] = getTag(address);
 }
 

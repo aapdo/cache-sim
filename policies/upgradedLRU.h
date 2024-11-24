@@ -14,6 +14,7 @@ public:
     void insert(ll address, ll blockToReplace) override; // 블록 삽입
     void insert(Access access, ll blockToReplace); // 블록 삽입
     void flushWriteBuffer(); // Write Buffer 플러시
+    bool isInWriteBuffer(ll address);
     ~UpgradedLRU();
 
 private:

@@ -30,6 +30,7 @@ class Cache{
 
     private:
         ll hits, misses;
+        ll memAccs;
         ll* cacheBlocks;
         int level;
         std::string policy;
@@ -37,10 +38,12 @@ class Cache{
     public:
         void incHits();
         void incMisses();
+        void incMemAccs();
         int getLevel();
         std::string getPolicy();
         ll getTag(ll address);
         ll getIndex(ll address);
+        ll getMemAccs();
         virtual ll getBlockPosition(ll address);
         virtual void insert(ll address, ll blockToReplace);
 

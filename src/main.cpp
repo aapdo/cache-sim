@@ -101,6 +101,7 @@ int main(int argc, char *argv[]){
     auto start = high_resolution_clock::now();
 
     // 메모리 접근을 시뮬레이션
+    // Write-Through Policy
     while (true) {
         // 다음 메모리 주소를 읽어옴 (주소가 -1이면 EOF)
         Access access = getNextAddress();
