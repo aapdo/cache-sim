@@ -39,6 +39,7 @@ class Cache{
         void incHits();
         void incMisses();
         void incMemAccs();
+        void incMemAccs(ll);
         int getLevel();
         std::string getPolicy();
         ll getTag(ll address);

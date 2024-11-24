@@ -14,16 +14,17 @@ public:
     void insert(ll address, ll blockToReplace) override; // 블록 삽입
     void insert(Access access, ll blockToReplace); // 블록 삽입
     void flushWriteBuffer(); // Write Buffer 플러시
-    bool isInWriteBuffer(ll address);
+    bool isInWriteBuffer(ll);
     ~UpgradedLRU();
 
 private:
     struct Sector {
         bool valid;  // 섹터 유효성
         bool dirty;  // 섹터 더티 상태
-        std::vector<char> data; // 섹터 데이터
+        ll tag; // 섹터 데이터
+        ll address;
 
-        Sector(size_t sector_size) : valid(false), dirty(false), data(sector_size, 0) {}
+        Sector(size_t sector_size) : valid(false), dirty(false), tag(-1), address(-1) {}
     };
 
     struct CacheLine {
@@ -35,7 +36,7 @@ private:
     size_t sectorSize;     // 섹터 크기
     size_t numSectors;     // 블록당 섹터 개수
     std::vector<CacheLine> cache; // 섹터화된 캐시 구조
-    std::unordered_map<ll, std::vector<char>> writeBuffer; // Write Buffer
+    std::unordered_map<ll, ll> writeBuffer; // Write Buffer
     ll* lastUsed;          // 섹터별 LRU를 위한 최근 사용 시간
     ll time = 0;           // 글로벌 타이머
 

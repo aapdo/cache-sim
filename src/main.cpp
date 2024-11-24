@@ -1,3 +1,4 @@
+#include <iostream>
 #include <stdlib.h>
 #include <chrono>
 #include <fstream>
@@ -46,7 +47,7 @@ Cache* createCacheInstance(string& policy, ll cs, ll bs, ll sa, int level){
         Cache* cache = new FIFO(cs, bs, sa, level);
         return cache;
     }
-    else if(policy == "UpgradedLRU"){
+    else if(policy == "upgradedLRU"){
         Cache* cache = new UpgradedLRU(cs, bs, sa, level, 16);
         return cache;
     }
@@ -121,7 +122,7 @@ int main(int argc, char *argv[]){
                 cache[levelItr]->insert(address, blockToReplace); // 새로운 블록 삽입
                 
                 // UpgradedLRU인지 확인 후 Access 타입으로 insert 호출
-                if (policy == "UpgradedLRU") {
+                if (policy == "upgradedLRU") {
                     static_cast<UpgradedLRU*>(cache[levelItr])->insert(access, blockToReplace);
                 } else {
                     cache[levelItr]->insert(address, blockToReplace);

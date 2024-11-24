@@ -104,5 +104,6 @@ void printCacheStatus2(Cache* cache, std::chrono::milliseconds duration){
     printf("Accesses: %lld\t\tHits: %lld\t\tMisses: %lld\n",
         cache->getHits()+cache->getMisses(), cache->getHits(), cache->getMisses());
     printf("Duration: %lld ms\n", duration.count());
+    printf("Memory Access: %lld times\n", cache->getMemAccs());
     printf("\n");
 }

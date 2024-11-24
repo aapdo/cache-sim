@@ -19,7 +19,7 @@ ll UpgradedLRU::getBlockPosition(ll address) {
 
     for (ll block = index * setAssociativity; block < (index + 1) * setAssociativity; block++) {
         for (size_t sector = 0; sector < numSectors; sector++) {
-            if (cache[block].sectors[sector].valid && tag == cache[block].sectors[sector].data[0]) {
+            if (cache[block].sectors[sector].valid && tag == cache[block].sectors[sector].tag) {
                 return block; // 캐시 히트 시 해당 블록 반환
             }
         }
@@ -30,10 +30,15 @@ ll UpgradedLRU::getBlockPosition(ll address) {
 ll UpgradedLRU::getBlockToReplace(ll address) {
     ll index = getIndex(address);
     ll min_block = index * setAssociativity;
+    bool isEmpty = true;
     for (ll block = index * setAssociativity; block < (index + 1) * setAssociativity; block++) {
-        if (!cache[block].sectors[0].valid) {
-            return block; // 비어 있는 블록 반환
+        for (size_t sector = 0; sector < numSectors; sector++) {
+            if (!cache[block].sectors[sector].valid) {
+                isEmpty = false;
+            }
         }
+        if(isEmpty) return block;
+
         for (size_t sector = 0; sector < numSectors; sector++) {
             ll sectorIndex = block * numSectors + sector;
             if (lastUsed[sectorIndex] < lastUsed[min_block * numSectors]) {
@@ -50,7 +55,7 @@ void UpgradedLRU::insert(ll address, ll blockToReplace) {
 
     cache[blockToReplace].sectors[sector].valid = true;
     cache[blockToReplace].sectors[sector].dirty = false; // 새로 삽입되므로 더티 아님
-    cache[blockToReplace].sectors[sector].data[0] = tag; // 태그 저장
+    cache[blockToReplace].sectors[sector].tag = tag; // 태그 저장
     update(blockToReplace, 0); // LRU 업데이트
 }
 
@@ -64,12 +69,16 @@ void UpgradedLRU::insert(Access access, ll blockToReplace) {
     // offest / sectorSize = sector offset
     ll sector = (access.address % blockSize) / sectorSize;
 
+
     // 기존 블록이 유효하고 더티 상태인 경우 evict
     if (cache[blockToReplace].sectors[sector].valid &&
         cache[blockToReplace].sectors[sector].dirty) {
         
         // 더티 데이터를 Write Buffer에 추가
-        writeBuffer.insert({access.address, cache[blockToReplace].sectors[sector].data});
+        int blockAddress = cache[blockToReplace].sectors[sector].address;
+
+        if(isInWriteBuffer(blockAddress)) writeBuffer[blockAddress] = cache[blockToReplace].sectors[sector].tag;
+        else writeBuffer.insert({blockAddress, cache[blockToReplace].sectors[sector].tag});
         #ifdef DEBUG
         std::cout << "Evicted dirty sector from block " << blockToReplace 
                       << " and added to Write Buffer.\n";
@@ -80,34 +89,33 @@ void UpgradedLRU::insert(Access access, ll blockToReplace) {
     }
 
     cache[blockToReplace].sectors[sector].valid = true;
+    cache[blockToReplace].sectors[sector].address = access.address;
     // 명령어 타입에 따라 처리
     if (access.accessType == 's') { // 쓰기 명령어
         cache[blockToReplace].sectors[sector].dirty = true;
-        cache[blockToReplace].sectors[sector].data[0] = tag;
+        cache[blockToReplace].sectors[sector].tag = tag;
         // Write Buffer에 있는 경우 
         if(isInWriteBuffer(access.address)) {
             // write buffer에 있는 경우 메모리에 접근하지 않고 값만 변경해줌.
-            writeBuffer[access.address] = cache[blockToReplace].sectors[sector].data;
+            writeBuffer[access.address] = cache[blockToReplace].sectors[sector].tag;
         }
         // 교체해서 새로 insert할 블럭이 write buffer에 없는 경우 메모리에 접근해야 함.
         else {
-            writeBuffer.insert({access.address, cache[blockToReplace].sectors[sector].data});
+            writeBuffer.insert({access.address, cache[blockToReplace].sectors[sector].tag});
             incMemAccs();
         }
     } else { // 읽기 명령어
         cache[blockToReplace].sectors[sector].dirty = false; // 읽기는 더티 아님
         if(isInWriteBuffer(access.address)) {
             // write buffer에 있는 경우 메모리에 접근하지 않고 write buffer에서 읽어옴.
-            cache[blockToReplace].sectors[sector].data[0] = writeBuffer[access.address][0];
+            cache[blockToReplace].sectors[sector].tag = writeBuffer[access.address];
         }
         // 교체해서 새로 insert할 블럭이 write buffer에 없는 경우 메모리에 접근해야 함.
         else {
-            cache[blockToReplace].sectors[sector].data[0] = tag;
+            cache[blockToReplace].sectors[sector].tag = tag;
             incMemAccs();
         }
     }
-
-    update(blockToReplace, 0); // LRU 업데이트
 }
 
 bool UpgradedLRU::isInWriteBuffer(ll address){
@@ -115,17 +123,20 @@ bool UpgradedLRU::isInWriteBuffer(ll address){
 }
 
 void UpgradedLRU::update(ll block, int status) {
+    if(writeBuffer.size() > 19) flushWriteBuffer();
     ll baseIndex = block * numSectors;
-    for (size_t sector = 0; sector < numSectors; sector++) {
-        if (cache[block].sectors[sector].valid) {
-            lastUsed[baseIndex + sector] = time; // LRU 갱신
+    for (size_t sectorIdx = 0; sectorIdx < numSectors; sectorIdx++) {
+        if (cache[block].sectors[sectorIdx].valid) {
+            lastUsed[baseIndex + sectorIdx] = time; // LRU 갱신
         }
     }
     time++;
 }
 
+// write buffer가 100개 이상의 데이터를 가질 때 flush 하는 정책.
 void UpgradedLRU::flushWriteBuffer() {
     // write buffer에 저장된 것들을 모두 메모리에 저장함. 이 때 저장된 수에 따라? 주소에 따라? 메모리 접근 횟수를 추가시켜야함.
+    incMemAccs(writeBuffer.size());
     writeBuffer.clear();
     #if DEBUG
     std::cout << "Flushed address: " << address << " with data size: " << data.size() << "\n";
@@ -136,6 +147,8 @@ void UpgradedLRU::evict(ll block) {
     for (size_t sector = 0; sector < numSectors; sector++) {
         cache[block].sectors[sector].valid = false; // 섹터 무효화
         cache[block].sectors[sector].dirty = false;
+        cache[block].sectors[sector].address = -1;
+        cache[block].sectors[sector].tag = -1;
     }
 }
 

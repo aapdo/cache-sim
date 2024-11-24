@@ -2,7 +2,7 @@
 
 #define ll long long
 
-ll readCounter=0, writeCounter=0, memAccs = 0;
+ll readCounter=0, writeCounter=0;
 
 // helper functions
 
@@ -51,20 +51,12 @@ void incWrites(){
     writeCounter++;
 }
 
-void incMemAccs(){
-    memAccs++;
-}
-
 ll getReads(){
     return readCounter;
 }
 
 ll getWrites(){
     return writeCounter;
-}
-
-ll getMemAccs(){
-    return memAccs;
 }
 
 std::string Cache::getPolicy(){
@@ -86,6 +78,7 @@ Cache::Cache(ll cacheSize, ll blockSize, ll setAssociativity, int level, std::st
     this->setAssociativity = setAssociativity;
     this->level = level;
     this->policy = policy;
+    this->memAccs = 0;
 
     // 캐시 블록 메모리를 동적 할당 (총 캐시 크기 / 블록 크기만큼 공간 할당)
     cacheBlocks = (ll*)malloc(cacheSize/blockSize * sizeof(ll));
@@ -112,6 +105,14 @@ void Cache::incMisses(){
     misses++;
 }
 
+void Cache::incMemAccs(){
+    memAccs++;
+}
+
+void Cache::incMemAccs(ll num){
+    memAccs += num;
+}
+
 int Cache::getLevel(){
     return level;
 }
@@ -122,6 +123,10 @@ ll Cache::getTag(ll address){
 
 ll Cache::getIndex(ll address){
     return (address>>offsetSize) & ((1<<indexSize)-1);
+}
+
+ll Cache::getMemAccs(){
+    return memAccs;
 }
 
 ll Cache::getBlockPosition(ll address){
