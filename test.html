@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STOMP WebSocket Example</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
+</head>
+<body>
+    <h1>STOMP WebSocket Example</h1>
+    <input type="text" id="messageInput" placeholder="Type your message here">
+    <button onclick="sendMessage()">Send Message</button>
+    <div id="messages"></div>
+
+    <script>
+        let stompClient;
+    
+        // WebSocket 연결 초기화
+        function connect() {
+            // 엔드포인트 URL 명시 (서버 주소와 포트를 포함)
+            const socket = new SockJS('http://localhost:8080/ws?token=your_jwt_token');// Spring WebSocket 엔드포인트
+            stompClient = Stomp.over(socket);
+    
+            stompClient.connect({}, function () {
+                console.log('Connected to WebSocket');
+    
+                // 서버에서 "/game/response"로 브로드캐스트된 메시지 구독
+                stompClient.subscribe('/game/response', function (response) {
+                    showMessage(response.body);
+                });
+            }, function (error) {
+                console.error('WebSocket connection error:', error);
+            });
+        }
+    
+        // 메시지 전송
+        function sendMessage() {
+            const message = document.getElementById("messageInput").value;
+            if (stompClient && stompClient.connected) {
+                stompClient.send("/ws/message", {}, message); // 서버로 메시지 전송
+            } else {
+                console.error('WebSocket is not connected.');
+            }
+        }
+    
+        // 메시지 화면에 표시
+        function showMessage(message) {
+            const messagesDiv = document.getElementById("messages");
+            const messageElement = document.createElement("div");
+            messageElement.textContent = message;
+            messagesDiv.appendChild(messageElement);
+        }
+    
+        // WebSocket 연결 실행
+        connect();
+    </script>
+    
+</body>
+</html>

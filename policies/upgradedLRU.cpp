@@ -89,33 +89,18 @@ void UpgradedLRU::insert(Access access, ll blockToReplace) {
     }
 
     cache[blockToReplace].sectors[sector].valid = true;
+    /**
+     * tag를 업데이트 하는 것은 같지만, 
+     * write buffer에 해당 데이터가 있다면 메모리에 접근하지 않고,
+     * write buffer에서 가지고 온다고 가정함.
+     */
+    if(!isInWriteBuffer(access.address)) incMemAccs();
+    cache[blockToReplace].sectors[sector].tag = tag;
+    cache[blockToReplace].sectors[sector].dirty = false; // 읽기는 더티 아님
+
     cache[blockToReplace].sectors[sector].address = access.address;
-    // 명령어 타입에 따라 처리
-    if (access.accessType == 's') { // 쓰기 명령어
-        cache[blockToReplace].sectors[sector].dirty = true;
-        cache[blockToReplace].sectors[sector].tag = tag;
-        // Write Buffer에 있는 경우 
-        if(isInWriteBuffer(access.address)) {
-            // write buffer에 있는 경우 메모리에 접근하지 않고 값만 변경해줌.
-            writeBuffer[access.address] = cache[blockToReplace].sectors[sector].tag;
-        }
-        // 교체해서 새로 insert할 블럭이 write buffer에 없는 경우 메모리에 접근해야 함.
-        else {
-            writeBuffer.insert({access.address, cache[blockToReplace].sectors[sector].tag});
-            incMemAccs();
-        }
-    } else { // 읽기 명령어
-        cache[blockToReplace].sectors[sector].dirty = false; // 읽기는 더티 아님
-        if(isInWriteBuffer(access.address)) {
-            // write buffer에 있는 경우 메모리에 접근하지 않고 write buffer에서 읽어옴.
-            cache[blockToReplace].sectors[sector].tag = writeBuffer[access.address];
-        }
-        // 교체해서 새로 insert할 블럭이 write buffer에 없는 경우 메모리에 접근해야 함.
-        else {
-            cache[blockToReplace].sectors[sector].tag = tag;
-            incMemAccs();
-        }
-    }
+    // 쓰기 명령어인 경우 dirty 설정
+    if (access.accessType == 's') cache[blockToReplace].sectors[sector].dirty = true;
 }
 
 bool UpgradedLRU::isInWriteBuffer(ll address){
